@@ -54,12 +54,15 @@ for file in files:
    fft_sig[file] = np.delete(fft_sig[file], falscheElemente)
 
 plt.figure()
-# i = 1
+i = 0
+color=['ro', 'bo', 'go', 'co', 'yo']
+color2=['r', 'b', 'g', 'c', 'y']
 
 for file in files:
-   plt.plot(fft_f[file], np.abs(fft_sig[file].real))
+   plt.stem(fft_f[file], np.abs(fft_sig[file]), color2[i], markerfmt=color[i], label=file)
+   i += 1
 
-plt.legend(files)
+plt.legend()
 
 plt.xlabel('Frequenz in Hz')
 plt.ylabel('Delta y in m')
