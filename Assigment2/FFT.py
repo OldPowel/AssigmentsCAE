@@ -1,6 +1,18 @@
 import os
 import pandas
+import numpy as np
+import threading
 from pprint import pprint
+import matplotlib.pyplot as plt
+
+
+def ploting (fft_t, fft_sig):
+   plt.figure()
+   plt.stem(np.fft.fftshift(fft_f), np.fft.fftshift(np.abs(fft_sig)))
+   plt.show()
+
+
+
 
 verzeichnis = 'histDatein'
 
@@ -20,3 +32,12 @@ for file in files:
 
 # 
 # print(daten)
+
+dt = daten[file]['t(s)'][2]-daten[file]['t(s)'][1]
+
+fft_f = np.fft.fftfreq(len(daten[file]['t(s)']), dt)
+fft_sig = np.fft.fft(daten[file]['y(m)']) * dt
+
+thread1 = threading.Thread( target = ploting, args = (fft_f, fft_sig) )
+thread1.start()
+thread1.join()
