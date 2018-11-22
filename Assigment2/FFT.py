@@ -2,14 +2,18 @@ import os
 import pandas
 import numpy as np
 import threading
+import time
 from pprint import pprint
 import matplotlib.pyplot as plt
 
 
 def ploting (fft_t, fft_sig):
    plt.figure()
-   plt.stem(np.fft.fftshift(fft_f), np.fft.fftshift(np.abs(fft_sig)))
+   plt.stem(np.fft.fftshift(fft_t), np.fft.fftshift(np.abs(fft_sig)))
    plt.show()
+   # fig, ax = plt.subplots()
+   # ax.plot(np.fft.fftshift(fft_t), np.fft.fftshift(np.abs(fft_sig))))
+   # plt.show()
 
 
 
@@ -20,7 +24,7 @@ files = os.listdir(verzeichnis)
 
 # pprint(files)
 
-file = files[1]
+# file = files[1]
 
 daten = {}
 for file in files:
@@ -30,14 +34,39 @@ for file in files:
       daten[file]['x(m)'] = tmp[2].tolist()
       daten[file]['y(m)'] = tmp[4].tolist()
 
-# 
-# print(daten)
+dt = {}
+fft_f = {}
+fft_sig = {}
 
-dt = daten[file]['t(s)'][2]-daten[file]['t(s)'][1]
+for file in files:
+   dt[file] = daten[file]['t(s)'][2]-daten[file]['t(s)'][1]
 
-fft_f = np.fft.fftfreq(len(daten[file]['t(s)']), dt)
-fft_sig = np.fft.fft(daten[file]['y(m)']) * dt
+   fft_f[file] = np.fft.fftfreq(len(daten[file]['t(s)']), dt[file])
+   fft_sig[file] = np.fft.fft(daten[file]['y(m)']) * dt[file]
 
-thread1 = threading.Thread( target = ploting, args = (fft_f, fft_sig) )
-thread1.start()
-thread1.join()
+for file in files:
+   falscheElemente = []
+   for index, element in enumerate(fft_f[file]):
+      if element < -1 or element > 200:
+         falscheElemente.append(index)
+
+   fft_f[file] = np.delete(fft_f[file], falscheElemente) 
+   fft_sig[file] = np.delete(fft_sig[file], falscheElemente)
+
+plt.figure()
+# i = 1
+
+for file in files:
+   plt.plot(fft_f[file], np.abs(fft_sig[file].real))
+
+plt.legend(files)
+
+plt.xlabel('Frequenz in Hz')
+plt.ylabel('Delta y in m')
+plt.grid(b=True, which = 'both')
+plt.show()
+
+
+# print('test')
+# while 1:
+#    time.sleep(3)
