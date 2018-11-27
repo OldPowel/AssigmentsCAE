@@ -34,6 +34,14 @@ for file in files:
       daten[file]['x(m)'] = tmp[2].tolist()
       daten[file]['y(m)'] = tmp[4].tolist()
 
+legende=[]
+j=1
+#legendeneinträge
+for file in files:
+   number = file.find('-')
+   legende.append(file[:number] )
+   j +=1
+
 dt = {}
 fft_f = {}
 fft_sig = {}
@@ -53,22 +61,24 @@ for file in files:
    fft_f[file] = np.delete(fft_f[file], falscheElemente) 
    fft_sig[file] = np.delete(fft_sig[file], falscheElemente)
 
-plt.figure()
+f=plt.figure()
 i = 0
 color=['ro', 'bo', 'go', 'co', 'yo']
 color2=['r', 'b', 'g', 'c', 'y']
 
 for file in files:
-   plt.stem(fft_f[file], np.abs(fft_sig[file]), color2[i], markerfmt=color[i], label=file)
+   plt.plot(fft_f[file], np.abs(fft_sig[file].real))
+   #plt.stem(fft_f[file], np.abs(fft_sig[file]), color2[i], markerfmt=color[i], label=file)
    i += 1
 
-plt.legend()
+plt.legend(legende)
 
 plt.xlabel('Frequenz in Hz')
 plt.ylabel('Delta y in m')
 plt.grid(b=True, which = 'both')
 plt.show()
 
+f.savefig("TransientAnalysis.pdf")
 
 # print('test')
 # while 1:
