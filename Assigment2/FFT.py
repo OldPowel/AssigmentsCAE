@@ -1,30 +1,15 @@
 import os
 import pandas
 import numpy as np
-import threading
-import time
-from pprint import pprint
+#import threading
+#import time
+#from pprint import pprint
 import matplotlib.pyplot as plt
 
 
-def ploting (fft_t, fft_sig):
-   plt.figure()
-   plt.stem(np.fft.fftshift(fft_t), np.fft.fftshift(np.abs(fft_sig)))
-   plt.show()
-   # fig, ax = plt.subplots()
-   # ax.plot(np.fft.fftshift(fft_t), np.fft.fftshift(np.abs(fft_sig))))
-   # plt.show()
-
-
-
-
-verzeichnis = 'histDatein'
+verzeichnis = 'histDateien'
 
 files = os.listdir(verzeichnis)
-
-# pprint(files)
-
-# file = files[1]
 
 daten = {}
 for file in files:
@@ -33,14 +18,6 @@ for file in files:
       daten[file] = {'t(s)': tmp[0].tolist()}
       daten[file]['x(m)'] = tmp[2].tolist()
       daten[file]['y(m)'] = tmp[4].tolist()
-
-legende=[]
-j=1
-#legendeneinträge
-for file in files:
-   number = file.find('-')
-   legende.append(file[:number] )
-   j +=1
 
 dt = {}
 fft_f = {}
@@ -55,21 +32,29 @@ for file in files:
 for file in files:
    falscheElemente = []
    for index, element in enumerate(fft_f[file]):
-      if element < -1 or element > 200:
+      if element < -1 or element > 400:
          falscheElemente.append(index)
 
    fft_f[file] = np.delete(fft_f[file], falscheElemente) 
    fft_sig[file] = np.delete(fft_sig[file], falscheElemente)
 
 f=plt.figure()
-i = 0
-color=['ro', 'bo', 'go', 'co', 'yo']
-color2=['r', 'b', 'g', 'c', 'y']
+# i = 0
+# color=['ro', 'bo', 'go', 'co', 'yo']
+# color2=['r', 'b', 'g', 'c', 'y']
 
 for file in files:
    plt.plot(fft_f[file], np.abs(fft_sig[file].real))
    #plt.stem(fft_f[file], np.abs(fft_sig[file]), color2[i], markerfmt=color[i], label=file)
-   i += 1
+   # i += 1
+
+#legendeneintraege
+legende = []
+for file in files:
+   number = file.find('-')
+   legende.append(file[:number] )
+
+
 
 plt.legend(legende)
 
@@ -79,7 +64,3 @@ plt.grid(b=True, which = 'both')
 plt.show()
 
 f.savefig("TransientAnalysis.pdf")
-
-# print('test')
-# while 1:
-#    time.sleep(3)
