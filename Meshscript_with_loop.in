@@ -1,0 +1,162 @@
+! ---- Example mesh script for assignment 3: coil ----
+
+! --------------------------------- !
+! DO NOT DELETE THE FOLLOWING LINES !
+! --------------------------------- !
+! Define qclear macro; needed to execute /clear command without answering the verify prompt
+! without qclear, you cannot run this script via terminal as the standard /clear would require the
+! user to type "yes" which is not possible when executing the script
+
+/sys,echo "!Rod Scholl\n!PADT\n\n*CFOPEN,qtemp\n*CFWRITE,finish\n*CFWRITE,/clear\n*CFCLOSE\n!\n/input,qtemp\n/sys,rm qtemp" > qclear.mac
+
+! --------------------------------- !
+! --------------------------------- !
+
+! ----------------------- !
+! Initialize ANSYS:
+! ----------------------- !
+FINI
+QCLEAR
+/PREP7
+NACSINIT
+
+! ----------------------- !
+! User Defined Parameters:
+! ----------------------- !
+
+d = 0.02
+l = 0.06
+s = 0.01
+r = 0.03
+dx = 0.005
+w = 0.01
+elemType = ''
+tol = dx/5
+
+! for r_core we use an array of length 4
+*dim,r_core_array,,4
+
+! to initialize the array, simple assign values
+r_core_array(1) = 1e-2,1.5e-2,2e-2,2.5e-2
+
+! ----------------------- !
+! Mesh generation with loop:
+! ----------------------- !
+
+! we use a do loop here
+! the syntax is as follows
+! *do, variable, starting value of variable, end value of variable, increment of variable
+*do,kk,1,4,1
+	
+	! in each iteration pick a different value of the array
+	! access to array elements as in matlab, i.e. round brackets, 1 = first entry
+	r_core = r_core_array(kk)
+
+	! important for later: 
+	! save all current parameter to a file called params
+	PARSAV,all,params
+
+	! ----------------------- !
+	! Create Geometry:
+	! ----------------------- !
+	
+	RECTNG,0,r_core,d+s,d+s+l
+	RECTNG,r,r+w,d,d+l
+	RECTNG,0,r+w+d,0,d !air
+	RECTNG,r+w,r+w+d,d,d+l !air
+	RECTNG,0,r,d,d+s !air
+	RECTNG,r_core,r,d+s,d+l !air
+	RECTNG,r_core,r+w+d,d+l,d+s+l !air
+	RECTNG,0,r+w+d,d+s+l,2*d+l !air
+
+
+
+	ASEL, all		!Select all areas
+	AGLUE, all		!Glue all selected areas
+
+	! ----------------------- !
+	! Create Mesh:
+	! ----------------------- !
+	
+	LSEL,all
+	LESIZE,all,dx
+
+
+	SETELEMS,'quadr',''
+
+	ASEL,all 
+	AMESH,all 
+
+
+	ASEL,s,loc,x,0,r_core
+	ASEL,r,loc,y,d+s,d+s+l
+	CM,core,area
+
+	ASEL,s,loc,x,r,r+w
+	ASEL,r,loc,y,d,d+l
+	CM,coil,area
+
+	ASEL,all
+	ASEL,u,,,core
+	ASEL,u,,,coil								!Now only the three air areas are left
+	CM,air,area
+	
+
+
+
+	CMSEL,s,core 						! select area (in this case the area is inside the component hotEL)
+	lsla,all 							! select ALL lines corresponding to this area (also inner ones!)
+	lsel,r,ext 							! reselect to obtain ONLY the OUTER surface lines
+	CM,corelines,line
+
+	CMSEL,s,coil 						! select area (in this case the area is inside the component hotEL)
+	lsla,all 							! select ALL lines corresponding to this area (also inner ones!)
+	lsel,r,ext 							! reselect to obtain ONLY the OUTER surface lines
+	CM,coillines,line
+
+	
+
+	REGION,'coreregion','core'
+	REGION,'coilregion','coil'
+	REGION,'airregion','air'
+
+
+	GROUP,'coresurface','corelines'
+	GROUP,'coilsurface','coillines'
+
+
+
+	! ----------------------- !
+	! Write NACS Files:
+	! ----------------------- !
+	
+	
+	! in order to not override the same file in each iteration, we of course
+	! have to adapt the name; via %r_core*1000%, ansys will replace
+	! r_core in the string by the current value of r_core 
+	! e.g. if r_core = 2.5e-2, the resulting mesh name will be
+	! 'Coil_rCore_25.nmf' (.nmf is added automatically)
+	WRITEMODEL,'Coil_rCore_%r_core*1000%'
+
+
+	! ----------------------- !
+	! Clear database and delete mesh before the next iteration
+	! ----------------------- !
+
+	! the following commands are crucial to allow the script to produce
+	! a valid mesh file in each iteration, do not change this part;
+	! the commands basically restart the ansys session, then load the
+	! defined set of parameter (including the ones of the do loop) and
+	! continues with the loop
+	FINI
+	QCLEAR
+	/prep7
+	NACSINIT
+
+	! restore the starting parameters including the iteration variable kk
+	PARRES,new,params
+
+! end loop
+*enddo
+
+
